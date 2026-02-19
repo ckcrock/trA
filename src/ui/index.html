@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hybrid Algo Terminal | Ferrari Cockpit</title>
+    <link rel="stylesheet" href="static/css/style.css">
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="top-bar">
+            <div class="logo">🏎️ HYBRID TRADER <span class="badge">PRO</span></div>
+            <div class="connection-status" id="connection-status">🔴 Disconnected</div>
+            <div class="clock" id="clock">00:00:00</div>
+        </header>
+
+        <!-- Main Workspace -->
+        <main class="workspace">
+            <!-- Left Sidebar: Market Watch -->
+            <aside class="market-watch glass-panel">
+                <div class="panel-header">
+                    <h3>Market Watch</h3>
+                    <input type="text" placeholder="Search Symbol..." id="symbol-search">
+                </div>
+                <ul class="watchlist" id="watchlist">
+                    <!-- Dynamic Items -->
+                    <li class="watchlist-item">
+                        <span class="symbol">NIFTY 50</span>
+                        <span class="price positive">22,150.00</span>
+                        <span class="change positive">+0.75%</span>
+                    </li>
+                    <li class="watchlist-item">
+                        <span class="symbol">BANKNIFTY</span>
+                        <span class="price negative">46,500.00</span>
+                        <span class="change negative">-0.25%</span>
+                    </li>
+                </ul>
+            </aside>
+
+            <!-- Center: Chart & Order Book -->
+            <section class="chart-area glass-panel">
+                <div class="chart-header">
+                    <span class="active-symbol">NIFTY 50</span>
+                    <div class="timeframes">
+                        <button class="active">1m</button>
+                        <button>5m</button>
+                        <button>15m</button>
+                        <button>1H</button>
+                    </div>
+                </div>
+                <div id="tv-chart-container" class="chart-container"></div>
+            </section>
+
+            <!-- Right Sidebar: Order Panel -->
+            <aside class="order-panel glass-panel">
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="buy">BUY</button>
+                    <button class="tab-btn" data-tab="sell">SELL</button>
+                </div>
+                
+                <form id="order-form">
+                    <div class="input-group">
+                        <label>Symbol</label>
+                        <input type="text" value="SBIN-EQ" readonly>
+                    </div>
+                    <div class="input-group">
+                        <label>Quantity</label>
+                        <input type="number" value="1" min="1">
+                    </div>
+                    <div class="input-group">
+                        <label>Price</label>
+                        <input type="number" placeholder="Limit Price">
+                    </div>
+                    
+                    <div class="order-types">
+                        <label><input type="radio" name="type" value="MARKET" checked> MKT</label>
+                        <label><input type="radio" name="type" value="LIMIT"> LMT</label>
+                    </div>
+                    
+                    <button type="submit" class="action-btn buy-btn">PLACE BUY ORDER</button>
+                </form>
+            </aside>
+        </main>
+
+        <!-- Bottom Panel: Positions & Orders -->
+        <footer class="bottom-panel glass-panel">
+            <div class="panel-header">
+                <div class="tabs">
+                    <button class="tab-btn active">Positions</button>
+                    <button class="tab-btn">Open Orders</button>
+                    <button class="tab-btn">Executed</button>
+                </div>
+            </div>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Symbol</th>
+                            <th>Qty</th>
+                            <th>Avg. Price</th>
+                            <th>LTP</th>
+                            <th>P&L</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="positions-body">
+                        <!-- Dynamic Rows -->
+                    </tbody>
+                </table>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="static/js/websocket.js"></script>
+    <script src="static/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+# Risk Management Configuration
+# Reference: SYSTEM_ARCHITECTURE.md §3.6, MISSING_REQUIREMENTS §4
+
+position_limits:
+  max_position_pct: 0.10          # Max 10% of capital per position
+  max_daily_loss_pct: 0.03        # Max 3% daily drawdown
+  max_open_positions: 10          # Max concurrent positions
+  max_order_value: 500000         # Max single order ₹5L
+  max_sector_exposure_pct: 0.25   # Max 25% in one sector
+
+product_types:
+  MIS:
+    leverage: 5                   # 5x intraday leverage
+    auto_square_off_time: "15:15" # IST
+    margin_pct: 0.20              # 20% margin required
+  CNC:
+    leverage: 1
+    margin_pct: 1.0               # Full margin
+  NRML:
+    leverage: 2                   # Carry forward
+    margin_pct: 0.50
+
+fno:
+  lot_sizes:                      # Common lot sizes (updated from exchange)
+    NIFTY: 25
+    BANKNIFTY: 15
+    FINNIFTY: 25
+  max_lots_per_order: 36          # Freeze qty limit
+  max_oi_check: true              # Check open interest limits
+
+rate_limits:
+  ops_threshold: 10               # Orders per second (SEBI limit)
+  historical_rpm: 3               # Historical data API
+  order_rpm: 10                   # Order placement API
+  quote_rpm: 5                    # Quote API
+
+circuit_breakers:
+  respect_mwcb: true              # Market-wide circuit breaker
+  respect_stock_limits: true      # Stock-specific bands
+  halt_on_broker_error: true      # Halt trading on repeated errors
+  max_consecutive_errors: 5

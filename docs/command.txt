@@ -1,0 +1,137 @@
+venv\Scripts\python.exe scripts\backtest_nautilus.py --period 6m --interval ONE_DAY --symbol SBIN --token 3045
+
+venv\Scripts\python.exe scripts\backtest_nautilus.py --period 6m --interval ONE_DAY --symbol SBIN --token 3045
+
+venv\Scripts\python.exe -c "from nautilus_trader.backtest.engine import BacktestEngine; print(dir(BacktestEngine().trader))"
+
+venv\Scripts\python.exe scripts\backtest_nautilus.py --period 6m --interval ONE_DAY --symbol SBIN --token 3045
+
+Get-ChildItem backtest_results\backtest_SBIN_6m_ONE_DAY_*.txt | Get-Content
+
+venv\Scripts\python.exe scripts\backtest_nautilus.py --period 1y --interval ONE_DAY --symbol SBIN --token 3045
+
+venv\Scripts\python.exe scripts\live_nautilus.py --duration 60 --symbol SBIN --token 3045
+
+venv\Scripts\python.exe scripts\live_nautilus.py --duration 10 --symbol SBIN --token 3045 > live_output.txt 2>&1
+
+venv\Scripts\python.exe -c "from nautilus_trader.live.node import TradingNode; from nautilus_trader.config import TradingNodeConfig; from nautilus_trader.model.identifiers import TraderId; node = TradingNode(config=TradingNodeConfig(trader_id=TraderId('test'))); print('add_instrument' in dir(node)); print('add_instrument' in dir(node.trader))"
+
+python scripts/live_nautilus.py --duration 30 --symbol SBIN --token 3045
+
+venv\Scripts\python.exe scripts\live_nautilus.py --duration 30 --symbol SBIN --token 3045
+
+venv\Scripts\python -m pytest tests\test_all_modules.py -v --tb=long -k "test_update_position or test_validate_price_tick or test_bracket_entry_fill or test_bracket_stoploss_hit" 2>&1
+
+venv\Scripts\python -m pytest tests\test_all_modules.py tests\test_backtesting.py -v --tb=short 2>&1
+
+venv\Scripts\python -m pytest tests\test_all_modules.py -v --tb=long -k "test_adx or test_generate_signal or test_stochastic or test_supertrend" 2>&1
+
+venv\Scripts\python -c "
+import sys; sys.path.insert(0,'.')
+import pandas as pd, numpy as np
+from src.strategies.indicators import adx, stochastic, supertrend
+
+np.random.seed(42)
+n = 100
+prices = 500 + np.cumsum(np.random.randn(n) * 2)
+df = pd.DataFrame({
+    'open': prices + np.random.randn(n),
+    'high': prices + abs(np.random.randn(n) * 2),
+    'low': prices - abs(np.random.randn(n) * 2),
+    'close': prices,
+    'volume': np.random.randint(1000, 50000, n),
+})
+
+r = adx(df, 14)
+print(f'adx type: {type(r)}, len: {len(r) if hasattr(r,\"__len__\") else \"N/A\"}')
+if isinstance(r, tuple):
+    print(f'  tuple len: {len(r)}')
+
+r2 = supertrend(df, 10, 3.0)
+print(f'supertrend type: {type(r2)}, len: {len(r2) if hasattr(r2,\"__len__\") else \"N/A\"}')
+
+# Check signals format
+from src.strategies.base_strategy import BaseStrategy
+class T(BaseStrategy):
+    def on_bar(self, bar): pass
+t = T({'name': 'x'})
+t.generate_signal('BUY', 100.0, 'test')
+print(f'signal keys: {t.signals[0].keys()}')
+"
+
+venv\Scripts\python -c "import sys; sys.path.insert(0,'.'); from src.strategies.indicators import adx, supertrend; import pandas as pd, numpy as np; np.random.seed(42); n=100; prices=500+np.cumsum(np.random.randn(n)*2); df=pd.DataFrame({'open':prices+np.random.randn(n),'high':prices+abs(np.random.randn(n)*2),'low':prices-abs(np.random.randn(n)*2),'close':prices,'volume':np.random.randint(1000,50000,n)}); r=adx(df,14); print(type(r)); print(len(r) if isinstance(r,tuple) else 'scalar/series'); r2=supertrend(df,10,3.0); print(type(r2)); print(len(r2) if isinstance(r2,tuple) else 'scalar/series')"
+
+venv\Scripts\python -c "import sys; sys.path.insert(0,'.'); from src.strategies.base_strategy import BaseStrategy; exec('class T(BaseStrategy):\n def on_bar(self, bar): pass'); t=T({'name':'x'}); t.generate_signal('BUY',100.0,'test'); print(t.signals[0].keys())"
+
+venv\Scripts\python -m pytest tests\test_all_modules.py tests\test_backtesting.py -v --tb=short 2>&1
+
+venv\Scripts\python scripts/run_nautilus_backtest.py
+
+set RUST_BACKTRACE=1 && venv\Scripts\python scripts/run_nautilus_backtest.py
+
+cmd /c "set RUST_BACKTRACE=1 && venv\Scripts\python scripts/run_nautilus_backtest.py"
+
+venv\Scripts\python scripts/run_nautilus_backtest.py
+
+cmd /c "set RUST_BACKTRACE=1 && venv\Scripts\python scripts/run_nautilus_backtest.py > output.txt 2>&1"
+
+venv\Scripts\python scripts/run_nautilus_backtest.py
+
+cmd /c "set RUST_BACKTRACE=1 && venv\Scripts\python scripts/run_nautilus_backtest.py > output2.txt 2>&1"
+
+venv\Scripts\python scripts/run_nautilus_backtest.py
+
+cmd /c "set RUST_BACKTRACE=1 && venv\Scripts\python scripts/run_nautilus_backtest.py > output3.txt 2>&1"
+
+venv\Scripts\python -c "from nautilus_trader.backtest.engine import BacktestEngine; print([m for m in dir(BacktestEngine) if 'stat' in m or 'report' in m])"
+
+venv\Scripts\python -c "from nautilus_trader.backtest.engine import BacktestEngine, BacktestEngineConfig, TraderId, LoggingConfig; engine = BacktestEngine(BacktestEngineConfig(trader_id=TraderId('T-001'), logging=LoggingConfig(log_level='ERROR'))); print([m for m in dir(engine) if not m.startswith('_')])"
+
+venv\Scripts\python -c "from nautilus_trader.backtest.engine import BacktestEngine; from nautilus_trader.config import BacktestEngineConfig, LoggingConfig; from nautilus_trader.model.identifiers import TraderId; engine = BacktestEngine(BacktestEngineConfig(trader_id=TraderId('T-001'), logging=LoggingConfig(log_level='ERROR'))); print([m for m in dir(engine) if not m.startswith('_')])"
+
+venv\Scripts\python -c "from nautilus_trader.backtest.engine import BacktestEngine, BacktestEngineConfig, TraderId, LoggingConfig; engine = BacktestEngine(BacktestEngineConfig(trader_id=TraderId('T-001'), logging=LoggingConfig(log_level='ERROR'))); print([m for m in dir(engine.trader) if 'stats' in m or 'report' in m or 'calc' in m])"
+
+venv\Scripts\python -c "
+from nautilus_trader.backtest.engine import BacktestEngine
+from nautilus_trader.config import BacktestEngineConfig, LoggingConfig
+from nautilus_trader.model.identifiers import TraderId
+
+engine = BacktestEngine(BacktestEngineConfig(trader_id=TraderId('T-001'), logging=LoggingConfig(log_level='ERROR')))
+print([m for m in dir(engine) if 'stat' in m or 'report' in m or 'result' in m])
+"
+
+venv\Scripts\python scripts/run_nautilus_backtest.py
+
+cmd /c "set RUST_BACKTRACE=1 && venv\Scripts\python scripts/run_nautilus_backtest.py > output4.txt 2>&1"
+
+venv\Scripts\python -c "from nautilus_trader.backtest.engine import BacktestResult; print([m for m in dir(BacktestResult) if not m.startswith('_')])"
+
+
+venv\Scripts\python -c "from nautilus_trader.backtest.engine import BacktestEngine; from nautilus_trader.config import BacktestEngineConfig, LoggingConfig; from nautilus_trader.model.identifiers import TraderId; engine = BacktestEngine(BacktestEngineConfig(trader_id=TraderId('T-001'), logging=LoggingConfig(log_level='ERROR'))); res=engine.get_result(); print([m for m in dir(res) if not m.startswith('_')])"
+
+
+venv\Scripts\python scripts/run_nautilus_backtest.py
+
+cmd /c "venv\Scripts\python scripts/run_nautilus_backtest.py > output5.txt 2>&1"
+
+pytest tests/test_api_integration.py
+
+pytest --collect-only tests/test_api_integration.py
+
+
+cmd /c "set PYTHONPATH=. && python -c \"import tests.test_api_integration\""
+
+pytest tests/test_all_modules.py --collect-only
+
+pip list | findstr "fastapi uvicorn httpx"
+
+python -m py_compile tests/test_api_integration.py
+
+cmd /c "pytest tests/test_api_integration.py > pytest_out.txt 2>&1"
+
+cmd /c "pytest tests/test_api_integration.py -v > pytest_out_3.txt 2>&1"
+
+cmd /c "pytest tests/test_e2e.py -v > e2e_out.txt 2>&1"
+
+cmd /c "python scripts/test_pipeline_e2e.py > pipeline_out.txt 2>&1"
+

@@ -1,0 +1,25 @@
+node:
+  trader_id: "TRADER-001"
+  environment: "paper"  # 'live' or 'paper'
+  log_level: "INFO"
+
+data_engine:
+  time_bars_build_with_no_updates: true
+  validate_data_sequence: true
+  
+exec_engine:
+  allow_cash_positions: true
+  debug: false
+  
+risk_engine:
+  max_order_size: 100
+  max_position_size: 1000
+  max_drawdown: 0.05
+  account_limit_cur: "INR"
+  
+broker:
+  name: "AngelOne"
+  connection_timeout: 30
+  max_retries: 3
+  rate_limit_orders: 10  # per second
+  rate_limit_data: 3     # per second

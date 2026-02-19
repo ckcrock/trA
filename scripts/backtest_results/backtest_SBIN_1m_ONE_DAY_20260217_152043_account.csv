@@ -1,0 +1,4 @@
+,total,locked,free,currency,account_id,account_type,base_currency,margins,reported,info
+2026-01-18 18:30:00+00:00,1000000.00,0.00,1000000.00,INR,NSE-001,MARGIN,,[],True,{}
+2026-02-12 18:30:00+00:00,1000000.00,0.00,1000000.00,INR,NSE-001,MARGIN,,[],False,{}
+2026-02-16 18:30:00+00:00,1000164.00,0.00,1000164.00,INR,NSE-001,MARGIN,,[],False,{}

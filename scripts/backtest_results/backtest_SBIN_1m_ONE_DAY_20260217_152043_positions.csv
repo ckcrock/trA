@@ -1,0 +1,2 @@
+position_id,trader_id,strategy_id,instrument_id,account_id,opening_order_id,closing_order_id,entry,side,quantity,peak_qty,ts_init,ts_opened,ts_last,ts_closed,duration_ns,avg_px_open,avg_px_close,commissions,realized_return,realized_pnl,is_snapshot
+NSE-1-001,BACKTESTER-001,EMACross-000,SBIN-EQ.NSE,NSE-001,O-20260212-183000-001-000-1,O-20260216-183000-001-000-2,BUY,FLAT,0,10,1770921000000000000,2026-02-12 18:30:00+00:00,1771266600000000000,2026-02-16 18:30:00+00:00,345600000000000,1198.6,1215.0,['0.00 INR'],0.01368,164.00 INR,False

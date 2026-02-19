@@ -1,0 +1,2 @@
+from nautilus_trader.config import BacktestEngineConfig
+print(BacktestEngineConfig.__doc__)
