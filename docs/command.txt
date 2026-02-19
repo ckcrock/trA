@@ -135,3 +135,59 @@ cmd /c "pytest tests/test_e2e.py -v > e2e_out.txt 2>&1"
 
 cmd /c "python scripts/test_pipeline_e2e.py > pipeline_out.txt 2>&1"
 
+(venv) C:\Users\rock5\Desktop\test\tp02\trA>venv\Scripts\python scripts\check_docs_contracts.py
+== Docs Contract Report ==
+Doc path refs: 71
+Missing file refs: 37
+  MISSING_PATH: scripts/deploy.sh
+  MISSING_PATH: scripts/download_instruments.py
+  MISSING_PATH: scripts/fetch_data.py
+  MISSING_PATH: scripts/setup_database.py
+  MISSING_PATH: src/analytics/indian_market_metrics.py
+  MISSING_PATH: src/backtesting/backtest_engine.py
+  MISSING_PATH: src/backtesting/monte_carlo.py
+  MISSING_PATH: src/backtesting/walk_forward.py
+  MISSING_PATH: src/corporate/actions_handler.py
+  MISSING_PATH: src/data/historical_data_manager.py
+  MISSING_PATH: src/engine/risk.py
+  MISSING_PATH: src/fno/options_chain.py
+  MISSING_PATH: src/indicators/indian_market_indicators.py
+  MISSING_PATH: src/manual/gtt_manager.py
+  MISSING_PATH: src/manual/portfolio_engine.py
+  MISSING_PATH: src/market/session_manager.py
+  MISSING_PATH: src/orders/product_types.py
+  MISSING_PATH: src/paper_trading/paper_engine.py
+  MISSING_PATH: src/risk/indian_market_risk.py
+  MISSING_PATH: src/settlement/settlement_manager.py
+  MISSING_PATH: src/strategies/mean_reversion/bollinger_bounce.py
+  MISSING_PATH: src/strategies/momentum/ema_crossover.py
+  MISSING_PATH: src/strategies/momentum/rsi_breakout.py
+  MISSING_PATH: src/strategies/multi_timeframe.py
+  MISSING_PATH: src/tax/indian_tax_calculator.py
+  MISSING_PATH: src/ui/css/theme.css
+  MISSING_PATH: src/ui/js/components/Chart.js
+  MISSING_PATH: src/ui/js/components/OrderPanel.js
+  MISSING_PATH: src/ui/js/utils/keyboard.js
+  MISSING_PATH: src/ui/js/websocket.js
+  MISSING_PATH: src/validation/overfitting_detector.py
+  MISSING_PATH: tests/integration
+  MISSING_PATH: tests/load/test_100_strategies.py
+  MISSING_PATH: tests/load/test_order_throughput.py
+  MISSING_PATH: tests/load/test_tick_throughput.py
+  MISSING_PATH: tests/results
+  MISSING_PATH: tests/unit
+Doc API refs: 11
+Stale API refs: 10
+  STALE_API: /api/docs
+  STALE_API: /api/instruments
+  STALE_API: /api/main.py
+  STALE_API: /api/market
+  STALE_API: /api/market/quote/{param}
+  STALE_API: /api/orders
+  STALE_API: /api/positions
+  STALE_API: /api/routes/websocket.py
+  STALE_API: /api/services/background_tasks.py
+  STALE_API: /api/strategies
+
+
+venv\Scripts\python scripts\live_nautilus.py --duration 120 --instrument SBIN-EQ --exchange NSE

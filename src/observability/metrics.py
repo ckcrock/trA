@@ -50,6 +50,16 @@ WS_CONNECTIONS = Gauge(
     ["type"]  # "broker" or "ui"
 )
 
+WS_RECONNECTS = Counter(
+    "trading_websocket_reconnects_total",
+    "Total broker WebSocket reconnect events"
+)
+
+WS_SUBSCRIBE_ERRORS = Counter(
+    "trading_websocket_subscribe_errors_total",
+    "Total broker WebSocket subscription errors"
+)
+
 TICKS_RECEIVED = Counter(
     "trading_ticks_received_total",
     "Total ticks received from broker WebSocket"
@@ -58,6 +68,11 @@ TICKS_RECEIVED = Counter(
 TICKS_DROPPED = Counter(
     "trading_ticks_dropped_total",
     "Ticks dropped due to backpressure"
+)
+
+TICKS_INVALID = Counter(
+    "trading_ticks_invalid_total",
+    "Ticks dropped due to malformed payload"
 )
 
 BRIDGE_QUEUE_SIZE = Gauge(

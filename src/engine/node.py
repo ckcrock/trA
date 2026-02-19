@@ -1,6 +1,6 @@
-"""
-Trading Node wrapper — manages configuration, lifecycle, and strategy orchestration.
-Reference: SYSTEM_ARCHITECTURE.md §3.1
+﻿"""
+Trading Node wrapper â€” manages configuration, lifecycle, and strategy orchestration.
+Reference: SYSTEM_ARCHITECTURE.md Â§3.1
 """
 
 import logging
@@ -43,15 +43,15 @@ class TradingNodeWrapper:
         try:
             self.config = load_trading_node_config(self.config_path)
             self.risk_limits = load_risk_limits()
-            logger.info(f"✅ Trading node config loaded: trader_id={self.config.get('trader_id')}")
+            logger.info(f"âœ… Trading node config loaded: trader_id={self.config.get('trader_id')}")
         except FileNotFoundError as e:
-            logger.warning(f"⚠️ Config not found, using defaults: {e}")
+            logger.warning(f"âš ï¸ Config not found, using defaults: {e}")
             self.config = {"trader_id": "TRADER-001", "instance_id": "001"}
             self.risk_limits = {}
 
     async def start(self):
         """Start the trading node."""
-        logger.info("🚀 Starting Trading Node...")
+        logger.info("ðŸš€ Starting Trading Node...")
 
         # Load configuration
         self.load_config()
@@ -69,26 +69,32 @@ class TradingNodeWrapper:
                 if "-" not in trader_id_val:
                     trader_id_val = f"{trader_id_val}-001"
                 
-                nautilus_config = TradingNodeConfig(
-                    trader_id=TraderId(trader_id_val),
-                    instance_id=self.config.get("instance_id", "001"),
-                )
+                config_kwargs = {"trader_id": TraderId(trader_id_val)}
+                if "instance_id" in getattr(TradingNodeConfig, "__annotations__", {}):
+                    config_kwargs["instance_id"] = self.config.get("instance_id", "001")
+                nautilus_config = TradingNodeConfig(**config_kwargs)
                 self.node = NautilusNode(config=nautilus_config)
                 
-                # Register Angel One Factories
-                # Note: valid_config_types tells Nautilus which config class maps to this factory
-                self.node.register_data_client_factory(
-                    "ANGELONE", 
-                    AngelOneDataClientFactory, 
-                    valid_config_types=[AngelOneDataClientConfig]
-                )
-                self.node.register_exec_client_factory(
-                    "ANGELONE", 
-                    AngelOneExecClientFactory, 
-                    valid_config_types=[AngelOneExecClientConfig]
-                )
+                # Register Angel One factories with API-compat fallback.
+                if hasattr(self.node, "register_data_client_factory"):
+                    self.node.register_data_client_factory(
+                        "ANGELONE",
+                        AngelOneDataClientFactory,
+                        valid_config_types=[AngelOneDataClientConfig],
+                    )
+                elif hasattr(self.node, "add_data_client_factory"):
+                    self.node.add_data_client_factory("ANGELONE", AngelOneDataClientFactory)
+
+                if hasattr(self.node, "register_exec_client_factory"):
+                    self.node.register_exec_client_factory(
+                        "ANGELONE",
+                        AngelOneExecClientFactory,
+                        valid_config_types=[AngelOneExecClientConfig],
+                    )
+                elif hasattr(self.node, "add_exec_client_factory"):
+                    self.node.add_exec_client_factory("ANGELONE", AngelOneExecClientFactory)
                 
-                logger.info(f"✅ Nautilus TradingNode initialized (Trader ID: {trader_id})")
+                logger.info(f"âœ… Nautilus TradingNode initialized (Trader ID: {trader_id_val})")
                 
                 # Note: We do NOT await self.node.run_async() here as it blocks.
                 # In a real system, we might run it in a separate task or rely on the main loop.
@@ -98,11 +104,11 @@ class TradingNodeWrapper:
                 logger.error(f"Failed to initialize Nautilus Node: {e}")
 
         self.running = True
-        logger.info(f"✅ Trading Node started (trader_id={self.config.get('trader_id')})")
+        logger.info(f"âœ… Trading Node started (trader_id={self.config.get('trader_id')})")
 
     async def stop(self):
         """Stop the trading node and all strategies."""
-        logger.info("⏹️ Stopping Trading Node...")
+        logger.info("â¹ï¸ Stopping Trading Node...")
 
         # Stop all strategies
         for name in list(self.lifecycle.strategies.keys()):
@@ -114,7 +120,7 @@ class TradingNodeWrapper:
              self.node.stop()
 
         self.running = False
-        logger.info("✅ Trading Node stopped")
+        logger.info("âœ… Trading Node stopped")
 
     def add_strategy(self, name: str, strategy_instance: Any, config: Dict = None):
         """Register and optionally start a strategy."""
@@ -125,7 +131,7 @@ class TradingNodeWrapper:
              # self.node.trader.add_strategy(strategy_instance)
              pass
 
-        logger.info(f"📋 Strategy '{name}' added to trading node")
+        logger.info(f"ðŸ“‹ Strategy '{name}' added to trading node")
 
     def start_strategy(self, name: str) -> bool:
         """Start a registered strategy."""
@@ -142,3 +148,5 @@ class TradingNodeWrapper:
     def is_running(self) -> bool:
         """Check if the trading node is running."""
         return self.running
+
+

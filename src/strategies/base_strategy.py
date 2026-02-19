@@ -37,6 +37,7 @@ class BaseStrategy:
 
         # Signal history
         self.signals: List[Dict] = []
+        self._signal_seq: int = 0
 
         # Order submission callback (set by engine/lifecycle)
         self._order_callback = None
@@ -83,10 +84,15 @@ class BaseStrategy:
         Record a signal and optionally submit an order.
         signal_type: 'BUY', 'SELL', 'HOLD'
         """
+        if signal_type not in {"BUY", "SELL", "HOLD"}:
+            raise ValueError(f"Invalid signal_type: {signal_type}")
+        self._signal_seq += 1
         signal = {
+            "signal_id": f"{self.name}-{self._signal_seq}",
+            "schema_version": "v1",
             "strategy": self.name,
             "type": signal_type,
-            "price": price,
+            "price": float(price),
             "reason": reason,
             "timestamp": now_ist().isoformat(),
             "position_before": self.position,
@@ -103,10 +109,17 @@ class BaseStrategy:
         """Update position after a fill."""
         if side == "BUY":
             if self.position <= 0:
-                # New long or closing short
-                self.realized_pnl += (self.entry_price - price) * abs(self.position) if self.position < 0 else 0
-                self.position = quantity
-                self.entry_price = price
+                # Closing short and possibly flipping to long.
+                short_qty = abs(self.position)
+                close_qty = min(quantity, short_qty)
+                if close_qty > 0:
+                    self.realized_pnl += (self.entry_price - price) * close_qty
+                self.position += quantity
+                if self.position > 0:
+                    # Flipped to long with residual qty.
+                    self.entry_price = price
+                elif self.position == 0:
+                    self.entry_price = 0.0
             else:
                 # Adding to long
                 total_cost = (self.entry_price * self.position) + (price * quantity)
@@ -119,10 +132,14 @@ class BaseStrategy:
                 self.position -= quantity
                 if self.position < 0:
                     self.entry_price = price  # New short entry
+                elif self.position == 0:
+                    self.entry_price = 0.0
             else:
                 # Adding to short
+                prev_short_qty = abs(self.position)
+                total_proceeds = (self.entry_price * prev_short_qty) + (price * quantity)
                 self.position -= quantity
-                self.entry_price = price
+                self.entry_price = total_proceeds / abs(self.position) if self.position != 0 else 0.0
 
         logger.info(f"📊 Position: {self.name} → {self.position} @ {self.entry_price:.2f}")
 
@@ -160,6 +177,7 @@ class BaseStrategy:
         self.bar_count = state.get("bar_count", 0)
         self.tick_count = state.get("tick_count", 0)
         self.signals = state.get("signals", [])
+        self._signal_seq = len(self.signals)
         logger.info(f"📂 State imported for '{self.name}': position={self.position}")
 
     # ─── Order Interface ─────────────────────────────────────────────

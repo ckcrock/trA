@@ -81,9 +81,11 @@ class SymbolResolver:
             self.load_instruments()
             
         # Case insensitive search
+        symbol_norm = str(symbol).strip().upper()
+        exchange_norm = str(exchange).strip().upper()
         mask = (
-            (self.instruments_df['symbol'] == symbol) & 
-            (self.instruments_df['exch_seg'] == exchange)
+            (self.instruments_df['symbol'].astype(str).str.upper() == symbol_norm) &
+            (self.instruments_df['exch_seg'].astype(str).str.upper() == exchange_norm)
         )
         result = self.instruments_df[mask]
         
@@ -93,21 +95,40 @@ class SymbolResolver:
             
         return result.iloc[0].to_dict()
 
-    def resolve_by_token(self, token: str, exchange: str = 'NSE') -> Optional[Dict]:
-        """Find instrument by token"""
+    def resolve_by_token(self, token: str, exchange: Optional[str] = None) -> Optional[Dict]:
+        """
+        Find instrument by token.
+
+        If `exchange` is provided, prefer that segment first.
+        Otherwise, search across segments and return a stable preferred match.
+        """
         if self.instruments_df is None:
             self.load_instruments()
-            
-        mask = (
-            (self.instruments_df['token'] == token) & 
-            (self.instruments_df['exch_seg'] == exchange)
-        )
-        result = self.instruments_df[mask]
-        
-        if result.empty:
+
+        token_norm = str(token).strip()
+        token_col = self.instruments_df["token"].astype(str).str.strip()
+        candidates = self.instruments_df[token_col == token_norm]
+
+        if candidates.empty:
             return None
-            
-        return result.iloc[0].to_dict()
+
+        exch_col = candidates["exch_seg"].astype(str).str.upper().str.strip()
+        preferred_order: List[str] = []
+        if exchange:
+            preferred_order.append(str(exchange).upper().strip())
+
+        # Deterministic fallback preference when exchange is unknown.
+        for exch in ["NSE", "BSE", "NFO", "MCX", "CDS"]:
+            if exch not in preferred_order:
+                preferred_order.append(exch)
+
+        for exch in preferred_order:
+            match = candidates[exch_col == exch]
+            if not match.empty:
+                return match.iloc[0].to_dict()
+
+        # Final fallback: return first token match regardless of exchange segment.
+        return candidates.iloc[0].to_dict()
 
     def get_liquid_stocks(self, min_volume: int = 1000000) -> List[Dict]:
         """Get list of liquid stocks (example implementation)"""

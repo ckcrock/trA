@@ -216,7 +216,7 @@
 
 - [ ] **REST API Routes**
   - `GET /api/instruments` - Search instruments
-  - `GET /api/market/quote/{symbol}` - Get quote
+  - `GET /api/market/quote?symbol=SBIN-EQ&exchange=NSE` - Get quote
   - `POST /api/orders` - Place order
   - `GET /api/positions` - Get positions
   - `GET /api/orders/history` - Order history

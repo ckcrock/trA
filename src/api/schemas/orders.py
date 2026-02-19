@@ -30,9 +30,9 @@ class PlaceOrderRequest(BaseModel):
     ordertype: OrderType
     producttype: ProductType
     duration: Duration = Duration.DAY
-    price: float = 0.0
-    quantity: int
-    triggerprice: Optional[float] = None
+    price: float = Field(default=0.0, ge=0.0)
+    quantity: int = Field(gt=0)
+    triggerprice: Optional[float] = Field(default=None, ge=0.0)
     variety: str = "NORMAL"
 
 class OrderResponse(BaseModel):

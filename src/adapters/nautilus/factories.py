@@ -2,20 +2,21 @@
 Factories for Angel One Nautilus Adapter.
 """
 
-from typing import Optional
+from typing import Optional, Any
 
 try:
     from nautilus_trader.live.factories import LiveDataClientFactory, LiveExecClientFactory
-    from nautilus_trader.common.component import MessageBus, Clock
-    from nautilus_trader.cache.cache import Cache
-    from nautilus_trader.common.logging import Logger
-    from nautilus_trader.config import LiveDataClientConfig, LiveExecClientConfig
     NAUTILUS_AVAILABLE = True
 except ImportError:
     NAUTILUS_AVAILABLE = False
     # Dummy classes
     class LiveDataClientFactory: pass
     class LiveExecClientFactory: pass
+
+MessageBus = Any
+Clock = Any
+Cache = Any
+Logger = Any
 
 from .data import AngelOneDataClient
 from .execution import AngelOneExecutionClient
@@ -28,16 +29,18 @@ from src.api.dependencies import get_data_client, get_execution_client, get_ws_c
 if NAUTILUS_AVAILABLE:
     class AngelOneDataClientFactory(LiveDataClientFactory):
         """Factory for Angel One Data Client."""
-        
-        def create(
-            self,
-            loop,
-            msgbus: MessageBus,
-            cache: Cache,
-            clock: Clock,
-            logger: Logger,
-            config: AngelOneDataClientConfig,
-        ) -> AngelOneDataClient:
+
+        @classmethod
+        def create(cls, *args, **kwargs) -> AngelOneDataClient:
+            """
+            Supports multiple Nautilus factory signatures across versions.
+            """
+            loop = kwargs.get("loop") or (args[0] if len(args) > 0 else None)
+            # New signature: (loop, name, config, msgbus, cache, clock)
+            config = kwargs.get("config") or (args[2] if len(args) > 2 else AngelOneDataClientConfig())
+            msgbus = kwargs.get("msgbus") or (args[3] if len(args) > 3 else None)
+            cache = kwargs.get("cache") or (args[4] if len(args) > 4 else None)
+            clock = kwargs.get("clock") or (args[5] if len(args) > 5 else None)
             
             # Use existing singletons
             client = get_data_client()
@@ -54,23 +57,24 @@ if NAUTILUS_AVAILABLE:
                 msgbus=msgbus,
                 cache=cache,
                 clock=clock,
-                logger=logger,
                 instrument_provider=provider,
                 config=config,
             )
 
     class AngelOneExecClientFactory(LiveExecClientFactory):
         """Factory for Angel One Execution Client."""
-        
-        def create(
-            self,
-            loop,
-            msgbus: MessageBus,
-            cache: Cache,
-            clock: Clock,
-            logger: Logger,
-            config: AngelOneExecClientConfig,
-        ) -> AngelOneExecutionClient:
+
+        @classmethod
+        def create(cls, *args, **kwargs) -> AngelOneExecutionClient:
+            """
+            Supports multiple Nautilus factory signatures across versions.
+            """
+            loop = kwargs.get("loop") or (args[0] if len(args) > 0 else None)
+            # New signature: (loop, name, config, msgbus, cache, clock)
+            config = kwargs.get("config") or (args[2] if len(args) > 2 else AngelOneExecClientConfig())
+            msgbus = kwargs.get("msgbus") or (args[3] if len(args) > 3 else None)
+            cache = kwargs.get("cache") or (args[4] if len(args) > 4 else None)
+            clock = kwargs.get("clock") or (args[5] if len(args) > 5 else None)
             
             # Use existing singletons
             client = get_execution_client()
@@ -85,7 +89,6 @@ if NAUTILUS_AVAILABLE:
                 msgbus=msgbus,
                 cache=cache,
                 clock=clock,
-                logger=logger,
                 instrument_provider=provider,
                 config=config,
             )

@@ -1,0 +1,193 @@
+{
+  "diagrams": [
+    {
+      "id": "01_system_context",
+      "title": "System Context",
+      "width": 1600,
+      "height": 900,
+      "nodes": [
+        {"id": "U", "label": "User / Operator", "x": 60, "y": 130, "w": 190, "h": 64, "fill": "#e8f1ff"},
+        {"id": "API", "label": "FastAPI Layer", "x": 360, "y": 110, "w": 210, "h": 64, "fill": "#ecfff1"},
+        {"id": "LIVE", "label": "scripts/live_nautilus.py", "x": 360, "y": 220, "w": 260, "h": 64, "fill": "#fff7e6"},
+        {"id": "NODE", "label": "Nautilus TradingNode", "x": 720, "y": 170, "w": 240, "h": 64, "fill": "#f2ecff"},
+        {"id": "BRIDGE", "label": "Bridge + Background Tasks", "x": 720, "y": 70, "w": 280, "h": 64, "fill": "#f7f7ff"},
+        {"id": "DCLIENT", "label": "AngelOneDataClient", "x": 1060, "y": 110, "w": 220, "h": 64, "fill": "#ecfff1"},
+        {"id": "ECLIENT", "label": "AngelOneExecutionClient", "x": 1060, "y": 220, "w": 240, "h": 64, "fill": "#ecfff1"},
+        {"id": "STRAT", "label": "Strategies", "x": 1060, "y": 330, "w": 180, "h": 64, "fill": "#fff0f0"},
+        {"id": "WS", "label": "Angel WebSocket", "x": 1360, "y": 80, "w": 180, "h": 60, "fill": "#fff4d6"},
+        {"id": "HIST", "label": "Angel Historical REST", "x": 1330, "y": 170, "w": 220, "h": 60, "fill": "#fff4d6"},
+        {"id": "ORD", "label": "Angel Order REST", "x": 1360, "y": 260, "w": 180, "h": 60, "fill": "#fff4d6"},
+        {"id": "EXCH", "label": "Market Data / Broker", "x": 1280, "y": 390, "w": 260, "h": 64, "fill": "#fde8e8"}
+      ],
+      "edges": [
+        {"source": "U", "target": "API", "label": "REST/WebSocket"},
+        {"source": "U", "target": "LIVE", "label": "CLI"},
+        {"source": "LIVE", "target": "NODE", "label": "build + run"},
+        {"source": "API", "target": "BRIDGE", "label": "control plane"},
+        {"source": "NODE", "target": "DCLIENT"},
+        {"source": "NODE", "target": "ECLIENT"},
+        {"source": "NODE", "target": "STRAT"},
+        {"source": "DCLIENT", "target": "WS"},
+        {"source": "DCLIENT", "target": "HIST"},
+        {"source": "ECLIENT", "target": "ORD"},
+        {"source": "WS", "target": "EXCH"},
+        {"source": "HIST", "target": "EXCH"},
+        {"source": "ORD", "target": "EXCH"}
+      ]
+    },
+    {
+      "id": "02_runtime_component_architecture",
+      "title": "Runtime Component Architecture",
+      "width": 1600,
+      "height": 940,
+      "nodes": [
+        {"id": "TN", "label": "TradingNode", "x": 110, "y": 140, "w": 190, "h": 60, "fill": "#f2ecff"},
+        {"id": "DE", "label": "DataEngine", "x": 110, "y": 240, "w": 190, "h": 60, "fill": "#f2ecff"},
+        {"id": "EE", "label": "ExecEngine", "x": 110, "y": 340, "w": 190, "h": 60, "fill": "#f2ecff"},
+        {"id": "RE", "label": "RiskEngine", "x": 110, "y": 440, "w": 190, "h": 60, "fill": "#f2ecff"},
+        {"id": "ST", "label": "EMACross Strategy", "x": 110, "y": 540, "w": 210, "h": 60, "fill": "#f2ecff"},
+
+        {"id": "F", "label": "Factories", "x": 520, "y": 150, "w": 190, "h": 60, "fill": "#ecfff1"},
+        {"id": "P", "label": "InstrumentProvider", "x": 520, "y": 250, "w": 220, "h": 60, "fill": "#ecfff1"},
+        {"id": "DC", "label": "nautilus/data.py", "x": 500, "y": 350, "w": 210, "h": 60, "fill": "#ecfff1"},
+        {"id": "XC", "label": "nautilus/execution.py", "x": 500, "y": 450, "w": 230, "h": 60, "fill": "#ecfff1"},
+        {"id": "NP", "label": "nautilus/parsing.py", "x": 500, "y": 550, "w": 210, "h": 60, "fill": "#ecfff1"},
+
+        {"id": "AUTH", "label": "angel/auth.py", "x": 980, "y": 180, "w": 190, "h": 60, "fill": "#fff7e6"},
+        {"id": "WS2", "label": "angel/websocket_client.py", "x": 960, "y": 280, "w": 240, "h": 60, "fill": "#fff7e6"},
+        {"id": "RESTD", "label": "angel/data_client.py", "x": 980, "y": 380, "w": 210, "h": 60, "fill": "#fff7e6"},
+        {"id": "RESTX", "label": "angel/execution_client.py", "x": 970, "y": 480, "w": 240, "h": 60, "fill": "#fff7e6"}
+      ],
+      "edges": [
+        {"source": "TN", "target": "DE"},
+        {"source": "TN", "target": "EE"},
+        {"source": "TN", "target": "RE"},
+        {"source": "TN", "target": "ST"},
+        {"source": "TN", "target": "F"},
+        {"source": "F", "target": "DC"},
+        {"source": "F", "target": "XC"},
+        {"source": "DC", "target": "P"},
+        {"source": "DC", "target": "NP"},
+        {"source": "DC", "target": "WS2"},
+        {"source": "DC", "target": "RESTD"},
+        {"source": "XC", "target": "RESTX"},
+        {"source": "AUTH", "target": "WS2"},
+        {"source": "AUTH", "target": "RESTD"},
+        {"source": "AUTH", "target": "RESTX"}
+      ]
+    },
+    {
+      "id": "03_live_market_data_flow",
+      "title": "Live Market Data Flow (Tick to Strategy)",
+      "width": 1600,
+      "height": 900,
+      "nodes": [
+        {"id": "WS", "label": "Angel WebSocket Tick", "x": 60, "y": 220, "w": 220, "h": 64, "fill": "#fff7e6"},
+        {"id": "ADC", "label": "AngelOneDataClient", "x": 360, "y": 220, "w": 220, "h": 64, "fill": "#ecfff1"},
+        {"id": "PARSE", "label": "parse_quote_tick + token resolve", "x": 660, "y": 220, "w": 290, "h": 64, "fill": "#ecfff1"},
+        {"id": "DE", "label": "DataEngine _handle_data(QuoteTick)", "x": 1040, "y": 220, "w": 310, "h": 64, "fill": "#f2ecff"},
+        {"id": "ST", "label": "Strategy callbacks", "x": 1390, "y": 220, "w": 170, "h": 64, "fill": "#f2ecff"},
+        {"id": "AGG", "label": "Bar Aggregation (bucket close)", "x": 700, "y": 420, "w": 280, "h": 64, "fill": "#fff0f0"},
+        {"id": "BAR", "label": "DataEngine _handle_data(Bar)", "x": 1040, "y": 420, "w": 290, "h": 64, "fill": "#fff0f0"}
+      ],
+      "edges": [
+        {"source": "WS", "target": "ADC", "label": "tick"},
+        {"source": "ADC", "target": "PARSE"},
+        {"source": "PARSE", "target": "DE", "label": "QuoteTick"},
+        {"source": "DE", "target": "ST"},
+        {"source": "ADC", "target": "AGG", "label": "_update_live_bar_subscriptions"},
+        {"source": "AGG", "target": "BAR", "label": "Bar"},
+        {"source": "BAR", "target": "ST"}
+      ]
+    },
+    {
+      "id": "04_historical_data_flow",
+      "title": "Historical Data Flow",
+      "width": 1600,
+      "height": 900,
+      "nodes": [
+        {"id": "ST", "label": "Strategy / DataEngine", "x": 120, "y": 230, "w": 240, "h": 64, "fill": "#f2ecff"},
+        {"id": "ADC", "label": "AngelOneDataClient _request_bars", "x": 470, "y": 230, "w": 300, "h": 64, "fill": "#ecfff1"},
+        {"id": "REST", "label": "Angel Historical REST", "x": 900, "y": 230, "w": 230, "h": 64, "fill": "#fff7e6"},
+        {"id": "PARSE", "label": "parse_bar row-by-row", "x": 900, "y": 420, "w": 230, "h": 64, "fill": "#fff0f0"},
+        {"id": "PUB", "label": "_handle_data(Bar) to DataEngine", "x": 1230, "y": 420, "w": 300, "h": 64, "fill": "#fff0f0"}
+      ],
+      "edges": [
+        {"source": "ST", "target": "ADC", "label": "RequestBars"},
+        {"source": "ADC", "target": "REST", "label": "token/exchange/interval"},
+        {"source": "REST", "target": "ADC", "label": "candles dataframe"},
+        {"source": "ADC", "target": "PARSE"},
+        {"source": "PARSE", "target": "PUB"},
+        {"source": "PUB", "target": "ST", "label": "bar callbacks"}
+      ]
+    },
+    {
+      "id": "05_execution_risk_gatekeeping",
+      "title": "Execution and Risk Gatekeeping",
+      "width": 1600,
+      "height": 900,
+      "nodes": [
+        {"id": "SIG", "label": "Strategy Signal", "x": 80, "y": 230, "w": 180, "h": 64, "fill": "#f2ecff"},
+        {"id": "ORD", "label": "Order Intent", "x": 340, "y": 230, "w": 180, "h": 64, "fill": "#f2ecff"},
+        {"id": "RISK", "label": "Risk Checks", "x": 600, "y": 230, "w": 180, "h": 64, "fill": "#fff0f0"},
+        {"id": "EXEC", "label": "ExecEngine", "x": 860, "y": 230, "w": 180, "h": 64, "fill": "#f2ecff"},
+        {"id": "ADP", "label": "Angel Execution Adapter", "x": 1120, "y": 230, "w": 230, "h": 64, "fill": "#ecfff1"},
+        {"id": "BROKER", "label": "Broker REST", "x": 1420, "y": 230, "w": 160, "h": 64, "fill": "#fff7e6"},
+        {"id": "REJ", "label": "Reject Event + Logs", "x": 620, "y": 420, "w": 220, "h": 64, "fill": "#fde8e8"},
+        {"id": "ACK", "label": "Ack / Fill / Reject", "x": 1240, "y": 420, "w": 220, "h": 64, "fill": "#fff7e6"}
+      ],
+      "edges": [
+        {"source": "SIG", "target": "ORD"},
+        {"source": "ORD", "target": "RISK"},
+        {"source": "RISK", "target": "EXEC", "label": "pass"},
+        {"source": "RISK", "target": "REJ", "label": "reject"},
+        {"source": "EXEC", "target": "ADP"},
+        {"source": "ADP", "target": "BROKER"},
+        {"source": "BROKER", "target": "ACK"},
+        {"source": "ACK", "target": "EXEC"}
+      ]
+    },
+    {
+      "id": "06_api_bridge_control_plane",
+      "title": "API + Bridge Control Plane",
+      "width": 1600,
+      "height": 900,
+      "nodes": [
+        {"id": "UI", "label": "Client / UI", "x": 80, "y": 230, "w": 180, "h": 64, "fill": "#e8f1ff"},
+        {"id": "REST", "label": "FastAPI Routes", "x": 360, "y": 230, "w": 200, "h": 64, "fill": "#ecfff1"},
+        {"id": "SVC", "label": "Services + Background Tasks", "x": 670, "y": 230, "w": 300, "h": 64, "fill": "#ecfff1"},
+        {"id": "BR", "label": "Bridge / Broadcast", "x": 1070, "y": 230, "w": 220, "h": 64, "fill": "#f2ecff"},
+        {"id": "WSAPI", "label": "API WebSocket Broadcaster", "x": 1370, "y": 230, "w": 220, "h": 64, "fill": "#fff7e6"}
+      ],
+      "edges": [
+        {"source": "UI", "target": "REST", "label": "REST"},
+        {"source": "REST", "target": "SVC"},
+        {"source": "SVC", "target": "BR"},
+        {"source": "BR", "target": "WSAPI"},
+        {"source": "WSAPI", "target": "UI", "label": "stream updates"}
+      ]
+    },
+    {
+      "id": "07_deployment_view",
+      "title": "Deployment View (Single Host Baseline)",
+      "width": 1600,
+      "height": 900,
+      "nodes": [
+        {"id": "API", "label": "FastAPI Process", "x": 180, "y": 210, "w": 220, "h": 64, "fill": "#ecfff1"},
+        {"id": "NODE", "label": "Nautilus TradingNode Process", "x": 480, "y": 210, "w": 300, "h": 64, "fill": "#f2ecff"},
+        {"id": "BG", "label": "Background Tasks", "x": 860, "y": 210, "w": 220, "h": 64, "fill": "#ecfff1"},
+        {"id": "CAT", "label": "Catalog CSV Cache", "x": 400, "y": 420, "w": 220, "h": 64, "fill": "#fff7e6"},
+        {"id": "LOG", "label": "Logs / Metrics", "x": 760, "y": 420, "w": 220, "h": 64, "fill": "#fff0f0"}
+      ],
+      "edges": [
+        {"source": "API", "target": "NODE", "label": "local calls/events"},
+        {"source": "NODE", "target": "API", "label": "status/events"},
+        {"source": "NODE", "target": "BG"},
+        {"source": "NODE", "target": "CAT"},
+        {"source": "API", "target": "CAT"},
+        {"source": "NODE", "target": "LOG"},
+        {"source": "API", "target": "LOG"}
+      ]
+    }
+  ]
+}

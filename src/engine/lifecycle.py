@@ -167,22 +167,28 @@ class StrategyLifecycleManager:
             entry = self.strategies.get(name)
             if not entry:
                 return {}
+            instance = entry.get("instance")
+            signal_count = len(getattr(instance, "signals", []) or [])
+            entry["signal_count"] = signal_count
             return {
                 "name": name,
                 "status": entry["status"],
                 "started_at": entry["started_at"],
                 "stopped_at": entry["stopped_at"],
-                "signal_count": entry["signal_count"],
+                "signal_count": signal_count,
             }
 
-        return {
-            n: {
+        status: Dict[str, Dict[str, Any]] = {}
+        for n, e in self.strategies.items():
+            instance = e.get("instance")
+            signal_count = len(getattr(instance, "signals", []) or [])
+            e["signal_count"] = signal_count
+            status[n] = {
                 "status": e["status"],
                 "started_at": e["started_at"],
-                "signal_count": e["signal_count"],
+                "signal_count": signal_count,
             }
-            for n, e in self.strategies.items()
-        }
+        return status
 
     def is_running(self, name: str) -> bool:
         """Check if a strategy is running."""

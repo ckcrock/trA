@@ -26,6 +26,9 @@ def load_trading_node_config(
 ) -> Dict[str, Any]:
     """Load trading node configuration."""
     config = load_yaml(path)
+    # Support both flat schema and nested schema under `node:`.
+    if "node" in config and isinstance(config["node"], dict):
+        config = config["node"]
     # Merge with defaults
     defaults = {
         "trader_id": "TRADER-001",

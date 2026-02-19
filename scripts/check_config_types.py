@@ -2,8 +2,11 @@ import nautilus_trader.config as config
 import inspect
 
 def print_params(cls_name):
+    cls = getattr(config, cls_name, None)
+    if cls is None:
+        print(f"SKIP {cls_name}: not available in this Nautilus version")
+        return
     try:
-        cls = getattr(config, cls_name)
         print(f"--- {cls_name} ---")
         # For Pydantic/Rust models, signature might be tricky, try __annotations__
         if hasattr(cls, "__annotations__"):

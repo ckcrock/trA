@@ -1,0 +1,14 @@
+Testing with TraderId object...
+✅ Success with TraderId object
+
+Testing with log_level...
+❌ Failed: Unexpected keyword argument 'log_level'
+
+Nautilus path: C:\Users\rock5\Desktop\test\tp02\trA\venv\Lib\site-packages\nautilus_trader
+File: C:\Users\rock5\Desktop\test\tp02\trA\venv\Lib\site-packages\nautilus_trader\backtest\config.py
+File: C:\Users\rock5\Desktop\test\tp02\trA\venv\Lib\site-packages\nautilus_trader\backtest\node.py
+File: C:\Users\rock5\Desktop\test\tp02\trA\venv\Lib\site-packages\nautilus_trader\backtest\node_builder.py
+File: C:\Users\rock5\Desktop\test\tp02\trA\venv\Lib\site-packages\nautilus_trader\backtest\results.py
+File: C:\Users\rock5\Desktop\test\tp02\trA\venv\Lib\site-packages\nautilus_trader\backtest\__init__.py
+File: C:\Users\rock5\Desktop\test\tp02\trA\venv\Lib\site-packages\nautilus_trader\backtest\__main__.py
+File: C:\Users\rock5\Desktop\test\tp02\trA\venv\Lib\site-packages\nautilus_trader\backtest\models\__init__.py

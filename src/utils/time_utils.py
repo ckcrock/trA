@@ -5,9 +5,11 @@ Reference: MISSING_REQUIREMENTS §5.1
 """
 
 import logging
+import os
 from datetime import datetime, time, date, timedelta
 from typing import Optional
 from zoneinfo import ZoneInfo
+import yaml
 
 logger = logging.getLogger(__name__)
 
@@ -22,8 +24,8 @@ POST_MARKET_START = time(15, 30)
 POST_MARKET_END = time(16, 0)
 MIS_SQUARE_OFF = time(15, 15)
 
-# NSE holidays 2025-2026 (update yearly)
-NSE_HOLIDAYS = {
+# Built-in fallback holidays (partial).
+_DEFAULT_NSE_HOLIDAYS = {
     date(2025, 1, 26),   # Republic Day
     date(2025, 2, 26),   # Maha Shivaratri
     date(2025, 3, 14),   # Holi
@@ -41,6 +43,31 @@ NSE_HOLIDAYS = {
     date(2025, 12, 25),  # Christmas
     date(2026, 1, 26),   # Republic Day
 }
+
+
+def _load_configured_holidays(path: str = "config/market_holidays.yaml") -> set[date]:
+    """
+    Load trading holidays from config. Expected schema:
+
+    nse:
+      - "2026-01-26"
+      - "2026-03-14"
+    """
+    if not os.path.exists(path):
+        return set()
+    try:
+        with open(path, "r") as f:
+            data = yaml.safe_load(f) or {}
+        result: set[date] = set()
+        for val in data.get("nse", []):
+            result.add(date.fromisoformat(str(val)))
+        return result
+    except Exception as e:
+        logger.warning(f"Failed to load market holidays from {path}: {e}")
+        return set()
+
+
+NSE_HOLIDAYS = _DEFAULT_NSE_HOLIDAYS | _load_configured_holidays()
 
 
 def now_ist() -> datetime:
