@@ -1,12 +1,15 @@
-﻿import logging
-from typing import Dict, List, Callable, Optional, Any
+import logging
+import threading
+from typing import Any, Callable, Dict, List, Optional
 
 from SmartApi.smartWebSocketV2 import SmartWebSocketV2
+
 from src.adapters.angel.auth import AngelAuthManager
 from src.observability.health_check import get_health_checker
 
 try:
     from src.observability.metrics import WS_CONNECTIONS, WS_RECONNECTS, WS_SUBSCRIBE_ERRORS
+
     METRICS_AVAILABLE = True
 except Exception:
     METRICS_AVAILABLE = False
@@ -41,14 +44,18 @@ class AngelWebSocketClient:
         self._ever_connected = False
         self.callbacks: List[Callable] = []
         self.subscribed_tokens: Dict[int, List[Dict[str, Any]]] = {}
+        self._callbacks_lock = threading.Lock()
+        self._subscriptions_lock = threading.Lock()
 
     def _on_data(self, ws, message):
         """Internal callback for raw data."""
-        for callback in self.callbacks:
+        with self._callbacks_lock:
+            callbacks = list(self.callbacks)
+        for callback in callbacks:
             try:
                 callback(message)
             except Exception as e:
-                logger.error(f"Error in tick callback: {e}")
+                logger.error("Error in tick callback: %s", e)
 
     def _on_open(self, ws):
         logger.info("WebSocket connection opened")
@@ -61,13 +68,18 @@ class AngelWebSocketClient:
         get_health_checker().update_component("broker_websocket", "healthy")
 
         # Restore subscriptions after reconnect.
-        for mode, token_groups in self.subscribed_tokens.items():
+        with self._subscriptions_lock:
+            subscriptions = {
+                mode: list(token_groups)
+                for mode, token_groups in self.subscribed_tokens.items()
+            }
+        for mode, token_groups in subscriptions.items():
             if not token_groups:
                 continue
             try:
                 self.sws.subscribe("reconnect01", mode, token_groups)
             except Exception as e:
-                logger.error(f"Resubscribe failed for mode {mode}: {e}")
+                logger.error("Resubscribe failed for mode %s: %s", mode, e)
 
     def _on_close(self, ws, *args):
         logger.warning("WebSocket connection closed")
@@ -77,7 +89,7 @@ class AngelWebSocketClient:
         get_health_checker().update_component("broker_websocket", "degraded")
 
     def _on_error(self, ws, error=None, *args):
-        logger.error(f"WebSocket error: {error}")
+        logger.error("WebSocket error: %s", error)
         get_health_checker().update_component("broker_websocket", "unhealthy", {"error": str(error)})
 
     def _init_sws(self):
@@ -120,9 +132,9 @@ class AngelWebSocketClient:
 
     def connect_in_thread(self):
         """Connect WebSocket in a separate thread (non-blocking)."""
+        if self.is_connected:
+            return None
         self._init_sws()
-        import threading
-
         thread = threading.Thread(target=self.connect, daemon=True)
         thread.start()
         return thread
@@ -131,7 +143,7 @@ class AngelWebSocketClient:
         """Subscribe to tokens using SmartWebSocketV2 payload format."""
         if not self.sws:
             logger.warning("WebSocket not initialized. Attempting to connect...")
-            self.connect()
+            self.connect_in_thread()
 
         import time
 
@@ -144,14 +156,67 @@ class AngelWebSocketClient:
 
         try:
             normalized_tokens = self._normalize_token_list(token_list)
+            with self._subscriptions_lock:
+                existing = self.subscribed_tokens.get(mode, [])
+                merged = self._merge_token_groups(existing, normalized_tokens)
+                incremental = self._diff_token_groups(merged, existing)
+                self.subscribed_tokens[mode] = merged
+
+            if not incremental:
+                logger.debug("No new token groups to subscribe for mode=%s", mode)
+                return
+
             correlation_id = "abcde12345"
-            self.sws.subscribe(correlation_id, mode, normalized_tokens)
-            self.subscribed_tokens[mode] = normalized_tokens
-            logger.info(f"Subscribed to {len(normalized_tokens)} token groups in mode {mode}")
+            self.sws.subscribe(correlation_id, mode, incremental)
+            logger.info(
+                "Subscribed to %s token groups in mode %s (total groups=%s)",
+                len(incremental),
+                mode,
+                len(merged),
+            )
         except Exception as e:
-            logger.error(f"Subscription failed: {e}")
+            logger.error("Subscription failed: %s", e)
             if METRICS_AVAILABLE:
                 WS_SUBSCRIBE_ERRORS.inc()
+
+    @staticmethod
+    def _merge_token_groups(
+        existing: List[Dict[str, Any]],
+        incoming: List[Dict[str, Any]],
+    ) -> List[Dict[str, Any]]:
+        merged: Dict[int, set[str]] = {}
+
+        for item in existing or []:
+            exch = int(item["exchangeType"])
+            merged.setdefault(exch, set()).update(str(token) for token in item.get("tokens", []))
+
+        for item in incoming or []:
+            exch = int(item["exchangeType"])
+            merged.setdefault(exch, set()).update(str(token) for token in item.get("tokens", []))
+
+        return [
+            {"exchangeType": exch, "tokens": sorted(tokens)}
+            for exch, tokens in sorted(merged.items(), key=lambda x: x[0])
+        ]
+
+    @staticmethod
+    def _diff_token_groups(
+        target: List[Dict[str, Any]],
+        baseline: List[Dict[str, Any]],
+    ) -> List[Dict[str, Any]]:
+        baseline_map: Dict[int, set[str]] = {}
+        for item in baseline or []:
+            exch = int(item["exchangeType"])
+            baseline_map.setdefault(exch, set()).update(str(token) for token in item.get("tokens", []))
+
+        diff: List[Dict[str, Any]] = []
+        for item in target or []:
+            exch = int(item["exchangeType"])
+            target_tokens = set(str(token) for token in item.get("tokens", []))
+            new_tokens = sorted(target_tokens - baseline_map.get(exch, set()))
+            if new_tokens:
+                diff.append({"exchangeType": exch, "tokens": new_tokens})
+        return diff
 
     def _normalize_token_list(self, token_list: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
@@ -171,17 +236,23 @@ class AngelWebSocketClient:
             if not isinstance(raw_tokens, list) or not raw_tokens:
                 raise ValueError("Each token group must include non-empty 'tokens' list")
 
-            normalized.append({
-                "exchangeType": exch,
-                "tokens": [str(token) for token in raw_tokens],
-            })
+            normalized.append(
+                {
+                    "exchangeType": exch,
+                    "tokens": [str(token) for token in raw_tokens],
+                }
+            )
 
         return normalized
 
     def register_callback(self, callback: Callable):
         """Register a function to be called on new ticks."""
-        self.callbacks.append(callback)
+        with self._callbacks_lock:
+            if callback not in self.callbacks:
+                self.callbacks.append(callback)
 
     def close(self):
         if self.sws:
             self.sws.close_connection()
+            self.sws = None
+        self.is_connected = False

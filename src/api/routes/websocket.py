@@ -1,8 +1,13 @@
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
-from typing import Set, Dict, List
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from typing import Set, Dict
 import json
 import logging
-import asyncio
+
+try:
+    from src.observability.metrics import WS_CONNECTIONS
+    METRICS_AVAILABLE = True
+except Exception:
+    METRICS_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +21,8 @@ class WebSocketManager:
     async def connect(self, websocket: WebSocket):
         await websocket.accept()
         self.active_connections.add(websocket)
+        if METRICS_AVAILABLE:
+            WS_CONNECTIONS.labels(type="ui").set(len(self.active_connections))
         logger.info(f"Client connected: {websocket.client}")
     
     def disconnect(self, websocket: WebSocket):
@@ -23,6 +30,8 @@ class WebSocketManager:
         # Remove from all subscriptions
         for subscribers in self.subscriptions.values():
             subscribers.discard(websocket)
+        if METRICS_AVAILABLE:
+            WS_CONNECTIONS.labels(type="ui").set(len(self.active_connections))
         logger.info(f"Client disconnected: {websocket.client}")
     
     def subscribe(self, websocket: WebSocket, channel: str):
@@ -38,7 +47,7 @@ class WebSocketManager:
         disconnected = set()
         message_json = json.dumps(message)
         
-        for websocket in self.subscriptions[channel]:
+        for websocket in list(self.subscriptions[channel]):
             try:
                 await websocket.send_text(message_json)
             except WebSocketDisconnect:

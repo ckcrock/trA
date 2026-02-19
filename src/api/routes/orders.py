@@ -1,13 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
-from typing import List, Dict
 import os
+import time
 from src.api.schemas.orders import PlaceOrderRequest, OrderResponse
 from src.api.dependencies import get_execution_client
 from src.adapters.angel.execution_client import AngelExecutionClient
 from src.engine.config_loader import load_risk_limits
 from src.risk.position_sizer import PositionSizer
 from src.utils.time_utils import is_market_open
-from src.observability.metrics import ORDERS_REJECTED
+from src.observability.metrics import ORDER_LATENCY, ORDERS_PLACED, ORDERS_REJECTED
 
 router = APIRouter()
 
@@ -59,20 +59,30 @@ def _validate_order_for_paper(order: PlaceOrderRequest):
     product_type = _normalize_product_type(order.producttype.value)
     validation_price = float(order.price or 0)
 
+    if order_type in {"MARKET", "STOPLOSS_MARKET"} and validation_price <= 0:
+        fallback_price = float(os.getenv("MARKET_ORDER_REFERENCE_PRICE", "0") or 0)
+        if fallback_price <= 0:
+            _raise_order_error(
+                order.exchange,
+                "MISSING_REFERENCE_PRICE",
+                "Risk guards require MARKET_ORDER_REFERENCE_PRICE for market-order validation",
+            )
+        validation_price = fallback_price
+
     if order_type in {"LIMIT", "STOPLOSS_LIMIT"} and validation_price <= 0:
         _raise_order_error(order.exchange, "INVALID_PRICE", "Price must be positive for limit/SL orders")
 
-    if validation_price > 0:
-        sizer = _get_position_sizer()
-        ok, err = sizer.validate_order(order.quantity, validation_price, product_type)
-        if not ok:
-            _raise_order_error(order.exchange, "RISK_VALIDATION_FAILED", err or "Risk validation failed")
+    sizer = _get_position_sizer()
+    ok, err = sizer.validate_order(order.quantity, validation_price, product_type)
+    if not ok:
+        _raise_order_error(order.exchange, "RISK_VALIDATION_FAILED", err or "Risk validation failed")
 
 @router.post("/", response_model=OrderResponse)
 async def place_order(
     order: PlaceOrderRequest,
     client: AngelExecutionClient = Depends(get_execution_client)
 ):
+    start_ts = time.perf_counter()
     try:
         _validate_order_for_paper(order)
         order_id = await client.place_order(
@@ -90,13 +100,23 @@ async def place_order(
         )
         
         if order_id:
+            ORDERS_PLACED.labels(
+                exchange=order.exchange,
+                order_type=order.ordertype.value,
+                product_type=order.producttype.value,
+                side=order.transactiontype.value,
+            ).inc()
+            ORDER_LATENCY.labels(exchange=order.exchange).observe(time.perf_counter() - start_ts)
             return OrderResponse(order_id=order_id, status="placed")
         else:
+            ORDER_LATENCY.labels(exchange=order.exchange).observe(time.perf_counter() - start_ts)
             _raise_order_error(order.exchange, "BROKER_PLACE_FAILED", "Order placement failed")
             
     except HTTPException:
+        ORDER_LATENCY.labels(exchange=order.exchange).observe(time.perf_counter() - start_ts)
         raise
     except Exception as e:
+        ORDER_LATENCY.labels(exchange=order.exchange).observe(time.perf_counter() - start_ts)
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/book")

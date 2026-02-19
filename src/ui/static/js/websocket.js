@@ -1,57 +1,100 @@
 class WSManager {
     constructor(url) {
-        self.url = url;
-        self.ws = null;
-        self.callbacks = {}; // channel -> [callback]
+        this.url = url;
+        this.ws = null;
+        this.callbacks = {};
+        this.subscriptions = new Set();
+        this.reconnectAttempts = 0;
+        this.shouldReconnect = true;
     }
 
     connect() {
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            return;
+        }
+
         this.ws = new WebSocket(this.url);
 
         this.ws.onopen = () => {
-            console.log("Connected to WebSocket");
-            document.getElementById('connection-status').innerText = '🟢 Connected';
-            document.getElementById('connection-status').style.color = '#00d06c';
-            
-            // Subscribe to default channels
-            this.subscribe("market_data");
+            this.reconnectAttempts = 0;
+            this._emit("open");
+            this.subscriptions.forEach((channel) => this._sendSubscribe(channel));
         };
 
         this.ws.onmessage = (event) => {
-            const message = JSON.parse(event.data);
-            this.handleMessage(message);
+            let message;
+            try {
+                message = JSON.parse(event.data);
+            } catch (error) {
+                this._emit("error", new Error("Invalid WebSocket payload"));
+                return;
+            }
+
+            this._emit("message", message);
+            if (message && message.type) {
+                this._emit(message.type, message.data);
+            }
+        };
+
+        this.ws.onerror = () => {
+            this._emit("error", new Error("WebSocket connection error"));
         };
 
         this.ws.onclose = () => {
-            console.log("Disconnected from WebSocket");
-            document.getElementById('connection-status').innerText = '🔴 Disconnected';
-            document.getElementById('connection-status').style.color = '#ff2800';
-            
-            // Auto reconnect
-            setTimeout(() => this.connect(), 5000);
+            this._emit("close");
+            if (!this.shouldReconnect) {
+                return;
+            }
+            this.reconnectAttempts += 1;
+            const delay = Math.min(15000, 1000 * Math.pow(2, this.reconnectAttempts));
+            setTimeout(() => this.connect(), delay);
         };
     }
 
+    close() {
+        this.shouldReconnect = false;
+        if (this.ws) {
+            this.ws.close();
+        }
+    }
+
     subscribe(channel) {
+        if (!channel) {
+            return;
+        }
+        this.subscriptions.add(channel);
+        this._sendSubscribe(channel);
+    }
+
+    on(eventType, callback) {
+        if (!this.callbacks[eventType]) {
+            this.callbacks[eventType] = [];
+        }
+        this.callbacks[eventType].push(callback);
+    }
+
+    _sendSubscribe(channel) {
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-            this.ws.send(JSON.stringify({
-                action: "subscribe",
-                channel: channel
-            }));
+            this.ws.send(
+                JSON.stringify({
+                    action: "subscribe",
+                    channel,
+                })
+            );
         }
     }
 
-    on(type, callback) {
-        if (!this.callbacks[type]) {
-            this.callbacks[type] = [];
-        }
-        this.callbacks[type].push(callback);
-    }
-
-    handleMessage(message) {
-        // Dispatch to type-specific listeners
-        if (message.type && this.callbacks[message.type]) {
-            this.callbacks[message.type].forEach(cb => cb(message.data));
-        }
+    _emit(eventType, payload) {
+        const handlers = this.callbacks[eventType] || [];
+        handlers.forEach((handler) => {
+            try {
+                handler(payload);
+            } catch (error) {
+                // Keep emitter resilient to subscriber exceptions.
+                console.error("WebSocket handler error:", error);
+            }
+        });
     }
 }
+
+window.WSManager = WSManager;

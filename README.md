@@ -70,6 +70,47 @@ Targeted regression command:
 venv\Scripts\python -m pytest -q tests/test_nautilus_parsing.py tests/test_operational_readiness.py tests/test_api_integration.py tests/test_angel_response_normalization.py -p no:cacheprovider
 ```
 
+## UI Terminal
+
+Frontend assets live under:
+
+- `src/ui/index.html`
+- `src/ui/static/css/style.css`
+- `src/ui/static/js/websocket.js`
+- `src/ui/static/js/app.js`
+
+The terminal expects API/WebSocket endpoints on the same host (`/api/*`, `/ws/stream`).
+
+## Prometheus + Grafana
+
+Preconfigured monitoring files:
+
+- `monitoring/prometheus.yml`
+- `monitoring/grafana/provisioning/datasources/datasource.yml`
+- `monitoring/grafana/provisioning/dashboards/dashboard.yml`
+- `monitoring/grafana/dashboards/trading-platform-overview.json`
+- `monitoring/grafana/dashboards/trading-execution-quality.json`
+- `monitoring/grafana/dashboards/trading-risk-portfolio.json`
+- `monitoring/grafana/dashboards/trading-market-data-integrity.json`
+
+Bring up monitoring stack:
+
+```powershell
+docker compose up -d prometheus grafana
+```
+
+Default Grafana login:
+
+- user: `admin`
+- password: `admin`
+
+Provisioned dashboards:
+
+1. `Trading Platform Overview`
+2. `Trading Execution Quality`
+3. `Trading Risk And Portfolio`
+4. `Trading Market Data Integrity`
+
 ## Architecture and Diagrams
 
 1. Main architecture and data-flow doc:

@@ -3,117 +3,153 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hybrid Algo Terminal | Ferrari Cockpit</title>
+    <title>Hybrid Trading Terminal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="static/css/style.css">
     <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
 </head>
 <body>
-    <div class="app-container">
-        <!-- Header -->
-        <header class="top-bar">
-            <div class="logo">🏎️ HYBRID TRADER <span class="badge">PRO</span></div>
-            <div class="connection-status" id="connection-status">🔴 Disconnected</div>
-            <div class="clock" id="clock">00:00:00</div>
+    <div class="bg-shape bg-shape-a"></div>
+    <div class="bg-shape bg-shape-b"></div>
+
+    <div class="app-shell">
+        <header class="top-bar panel">
+            <div class="brand">
+                <div class="brand-mark">TRA</div>
+                <div>
+                    <h1>Hybrid Trading Terminal</h1>
+                    <p>Live stream control panel for execution-safe operations</p>
+                </div>
+            </div>
+            <div class="header-meta">
+                <div class="pill disconnected" id="connection-status">Disconnected</div>
+                <div class="pill neutral" id="tick-rate">0 ticks/min</div>
+                <div class="clock" id="clock">--:--:--</div>
+            </div>
         </header>
 
-        <!-- Main Workspace -->
         <main class="workspace">
-            <!-- Left Sidebar: Market Watch -->
-            <aside class="market-watch glass-panel">
+            <aside class="panel watch-panel">
                 <div class="panel-header">
-                    <h3>Market Watch</h3>
-                    <input type="text" placeholder="Search Symbol..." id="symbol-search">
+                    <h2>Watchlist</h2>
+                    <input type="text" id="symbol-search" placeholder="Filter symbols">
                 </div>
-                <ul class="watchlist" id="watchlist">
-                    <!-- Dynamic Items -->
-                    <li class="watchlist-item">
-                        <span class="symbol">NIFTY 50</span>
-                        <span class="price positive">22,150.00</span>
-                        <span class="change positive">+0.75%</span>
-                    </li>
-                    <li class="watchlist-item">
-                        <span class="symbol">BANKNIFTY</span>
-                        <span class="price negative">46,500.00</span>
-                        <span class="change negative">-0.25%</span>
-                    </li>
-                </ul>
+                <ul id="watchlist" class="watchlist"></ul>
             </aside>
 
-            <!-- Center: Chart & Order Book -->
-            <section class="chart-area glass-panel">
-                <div class="chart-header">
-                    <span class="active-symbol">NIFTY 50</span>
-                    <div class="timeframes">
-                        <button class="active">1m</button>
-                        <button>5m</button>
-                        <button>15m</button>
-                        <button>1H</button>
+            <section class="panel chart-panel">
+                <div class="chart-toolbar">
+                    <div class="active-block">
+                        <div class="label">Active</div>
+                        <div class="value" id="active-symbol">SBIN-EQ</div>
+                        <div class="price" id="active-price">--</div>
+                    </div>
+                    <div class="timeframe-switch">
+                        <button class="timeframe-btn active" data-seconds="60">1m</button>
+                        <button class="timeframe-btn" data-seconds="300">5m</button>
+                        <button class="timeframe-btn" data-seconds="900">15m</button>
+                        <button class="timeframe-btn" data-seconds="3600">1h</button>
                     </div>
                 </div>
                 <div id="tv-chart-container" class="chart-container"></div>
+                <div class="market-tape" id="market-tape"></div>
             </section>
 
-            <!-- Right Sidebar: Order Panel -->
-            <aside class="order-panel glass-panel">
-                <div class="tabs">
-                    <button class="tab-btn active" data-tab="buy">BUY</button>
-                    <button class="tab-btn" data-tab="sell">SELL</button>
+            <aside class="panel order-panel">
+                <div class="panel-header">
+                    <h2>Quick Order</h2>
                 </div>
-                
-                <form id="order-form">
-                    <div class="input-group">
-                        <label>Symbol</label>
-                        <input type="text" value="SBIN-EQ" readonly>
+                <form id="order-form" class="order-form">
+                    <label>Symbol</label>
+                    <input id="order-symbol" type="text" value="SBIN-EQ" required>
+
+                    <label>Exchange</label>
+                    <select id="order-exchange">
+                        <option value="NSE">NSE</option>
+                        <option value="BSE">BSE</option>
+                        <option value="NFO">NFO</option>
+                        <option value="MCX">MCX</option>
+                    </select>
+
+                    <div class="inline-grid">
+                        <div>
+                            <label>Side</label>
+                            <select id="order-side">
+                                <option value="BUY">BUY</option>
+                                <option value="SELL">SELL</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>Type</label>
+                            <select id="order-type">
+                                <option value="MARKET">MARKET</option>
+                                <option value="LIMIT">LIMIT</option>
+                                <option value="STOPLOSS_LIMIT">STOPLOSS_LIMIT</option>
+                                <option value="STOPLOSS_MARKET">STOPLOSS_MARKET</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="input-group">
-                        <label>Quantity</label>
-                        <input type="number" value="1" min="1">
+
+                    <div class="inline-grid">
+                        <div>
+                            <label>Quantity</label>
+                            <input id="order-qty" type="number" min="1" value="1" required>
+                        </div>
+                        <div>
+                            <label>Price</label>
+                            <input id="order-price" type="number" min="0" step="0.01" placeholder="Reference / Limit">
+                        </div>
                     </div>
-                    <div class="input-group">
-                        <label>Price</label>
-                        <input type="number" placeholder="Limit Price">
-                    </div>
-                    
-                    <div class="order-types">
-                        <label><input type="radio" name="type" value="MARKET" checked> MKT</label>
-                        <label><input type="radio" name="type" value="LIMIT"> LMT</label>
-                    </div>
-                    
-                    <button type="submit" class="action-btn buy-btn">PLACE BUY ORDER</button>
+
+                    <label>Product</label>
+                    <select id="order-product">
+                        <option value="INTRADAY">INTRADAY</option>
+                        <option value="DELIVERY">DELIVERY</option>
+                        <option value="MARGIN">MARGIN</option>
+                        <option value="CARRYFORWARD">CARRYFORWARD</option>
+                    </select>
+
+                    <button type="submit" id="order-submit">Place Order</button>
+                    <p id="order-status" class="order-status">Awaiting action</p>
                 </form>
+
+                <div class="mini-stats">
+                    <div class="stat-card">
+                        <span>Bridge Queue</span>
+                        <strong id="queue-size">--</strong>
+                    </div>
+                </div>
             </aside>
         </main>
 
-        <!-- Bottom Panel: Positions & Orders -->
-        <footer class="bottom-panel glass-panel">
+        <section class="panel positions-panel">
             <div class="panel-header">
-                <div class="tabs">
-                    <button class="tab-btn active">Positions</button>
-                    <button class="tab-btn">Open Orders</button>
-                    <button class="tab-btn">Executed</button>
-                </div>
+                <h2>Positions</h2>
             </div>
-            <div class="table-container">
-                <table class="data-table">
+            <div class="table-wrap">
+                <table>
                     <thead>
                         <tr>
                             <th>Symbol</th>
                             <th>Qty</th>
-                            <th>Avg. Price</th>
+                            <th>Avg Price</th>
                             <th>LTP</th>
-                            <th>P&L</th>
+                            <th>PnL</th>
                             <th>Action</th>
                         </tr>
                     </thead>
                     <tbody id="positions-body">
-                        <!-- Dynamic Rows -->
+                        <tr>
+                            <td colspan="6" class="muted">Waiting for position snapshot...</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
-        </footer>
+        </section>
     </div>
 
-    <!-- Scripts -->
     <script src="static/js/websocket.js"></script>
     <script src="static/js/app.js"></script>
 </body>

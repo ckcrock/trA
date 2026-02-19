@@ -88,7 +88,8 @@ class DataBridge:
             
     def subscribe(self, callback: Callable[[Dict], Awaitable[None]]):
         """Register an async callback for tick events"""
-        self.subscribers.append(callback)
+        if callback not in self.subscribers:
+            self.subscribers.append(callback)
     
     async def start(self):
         """Start the event processing loop"""
@@ -101,7 +102,8 @@ class DataBridge:
         """Stop the event processing loop"""
         self.running = False
         if self._processor_task:
-            await self._processor_task
+            self._processor_task.cancel()
+            await asyncio.gather(self._processor_task, return_exceptions=True)
             self._processor_task = None
         self._loop = None
         logger.info("DataBridge stopped")
@@ -124,7 +126,9 @@ class DataBridge:
                 
                 self.stats['broadcast_count'] += 1
                 self.queue.task_done()
-                
+
+            except asyncio.CancelledError:
+                break
             except Exception as e:
                 logger.error(f"Error processing tick: {e}")
     
@@ -134,7 +138,7 @@ class DataBridge:
         def _normalize_price(value: Any) -> float:
             try:
                 num = float(value or 0)
-                if abs(num) >= 100000:  # Heuristic: raw scaled integer
+                if abs(num) >= 1000 and float(int(num)) == num:
                     return num / 100.0
                 return num
             except (TypeError, ValueError):
@@ -212,10 +216,13 @@ class DataBridge:
         """Broadcast tick to all subscribers"""
         if not self.subscribers:
             return
-            
+
         tasks = [subscriber(tick) for subscriber in self.subscribers]
         # Run all subscribers concurrently, ignore exceptions to prevent one sub from blocking others
-        await asyncio.gather(*tasks, return_exceptions=True)
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        for result in results:
+            if isinstance(result, Exception):
+                logger.error("Subscriber broadcast error: %s", result)
     
     def get_stats(self) -> dict:
         """Get bridge statistics"""

@@ -1,8 +1,9 @@
-﻿from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager
 import inspect
 import json
 import logging
 import os
+import time
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -24,10 +25,15 @@ from src.api.routes.websocket import manager as ui_ws_manager
 from src.api.services.background_tasks import BackgroundTaskManager
 from src.bridge.websocket_broadcaster import WebSocketBroadcaster
 from src.observability.logging_config import setup_logging
-from src.observability.metrics import init_metrics
+from src.observability.metrics import API_LATENCY, API_REQUESTS, init_metrics
 
 setup_logging()
 logger = logging.getLogger("api")
+
+
+def _parse_cors_origins(raw: str) -> list[str]:
+    origins = [item.strip() for item in (raw or "").split(",") if item.strip()]
+    return origins or ["http://localhost:3000", "http://127.0.0.1:3000"]
 
 
 def create_app() -> FastAPI:
@@ -91,9 +97,9 @@ def create_app() -> FastAPI:
         finally:
             logger.info("Shutting down")
             await bg_tasks.stop()
-            await get_data_bridge().stop()
-            await get_trading_node().stop()
-            get_ws_client().close()
+            await bridge.stop()
+            await node.stop()
+            ws_client.close()
             logger.info("Shutdown complete")
 
     app = FastAPI(
@@ -104,10 +110,31 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
+    @app.middleware("http")
+    async def metrics_middleware(request, call_next):
+        start = time.perf_counter()
+        response = await call_next(request)
+        duration = time.perf_counter() - start
+
+        route = request.scope.get("route")
+        path = getattr(route, "path", request.url.path)
+        method = request.method
+        status_code = str(response.status_code)
+
+        API_REQUESTS.labels(method=method, path=path, status_code=status_code).inc()
+        API_LATENCY.labels(method=method, path=path).observe(duration)
+        return response
+
+    cors_origins = _parse_cors_origins(os.getenv("CORS_ALLOW_ORIGINS", ""))
+    cors_allow_credentials = os.getenv("CORS_ALLOW_CREDENTIALS", "true").lower() == "true"
+    if "*" in cors_origins and cors_allow_credentials:
+        cors_allow_credentials = False
+        logger.warning("CORS wildcard origin detected; forcing allow_credentials=false for safety.")
+
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
-        allow_credentials=True,
+        allow_origins=cors_origins,
+        allow_credentials=cors_allow_credentials,
         allow_methods=["*"],
         allow_headers=["*"],
     )
@@ -136,4 +163,3 @@ if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run("src.api.main:app", host="0.0.0.0", port=8000, reload=True)
-
