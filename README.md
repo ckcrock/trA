@@ -113,6 +113,8 @@ Provisioned dashboards:
 
 ## Architecture and Diagrams
 
+0. Final consolidated documentation:
+   - `docs/FINAL_DOCUMENTATION.md`
 1. Main architecture and data-flow doc:
    - `docs/SYSTEM_DIAGRAMS_AND_DATA_FLOW.md`
 2. Use cases and runtime behavior:
